@@ -1,3 +1,4 @@
+use limiter::Cooldown;
 use rocket::serde::json::Json;
 use rocket::serde::Deserialize;
 use rocket::State;
@@ -8,6 +9,7 @@ use std::{sync::Mutex, thread};
 #[macro_use]
 extern crate rocket;
 mod canvas;
+mod limiter;
 mod state;
 
 #[derive(Deserialize)]
@@ -22,13 +24,20 @@ enum Operation {
     Publish,
 }
 
+#[catch(default)]
+fn default_catcher() {}
+
 #[get("/")]
 fn get_canvas<'c>(state_factory: &State<state::StateFactory>) -> canvas::Canvas {
     state_factory.create().get()
 }
 
 #[post("/", data = "<colorize>")]
-fn colorize(colorize: Json<Colorize>, send_op: &State<Mutex<Sender<Operation>>>) {
+fn colorize(
+    colorize: Json<Colorize>,
+    send_op: &State<Mutex<Sender<Operation>>>,
+    _cooldown: Cooldown,
+) {
     send_op
         .lock()
         .unwrap()
@@ -57,7 +66,9 @@ fn rocket() -> _ {
     });
 
     rocket::build()
+        .register("/", catchers![default_catcher])
         .manage(state_factory)
         .manage(Mutex::new(send))
+        .manage(limiter::Limiter::new())
         .mount("/", routes![get_canvas, colorize])
 }
