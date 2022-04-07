@@ -1,21 +1,13 @@
 use std::io::Cursor;
 
-use rocket::{http::ContentType, response::Responder, serde::Deserialize, Response};
+use rocket::{http::ContentType, response::Responder, Response};
 
 const WIDTH: usize = 100;
 const HEIGHT: usize = 100;
 
-#[derive(Clone, Copy, Deserialize)]
-pub enum Color {
-    Black = 0,
-    White = 1,
-}
+pub const COLORS: &'static str = include_str!("../colors.json");
 
-impl Default for Color {
-    fn default() -> Self {
-        Self::Black
-    }
-}
+pub type Color = u8;
 
 #[derive(Clone)]
 pub struct Canvas {
@@ -36,9 +28,8 @@ impl Default for Canvas {
 
 impl<'r> Responder<'r, 'static> for Canvas {
     fn respond_to(self, _request: &'r rocket::Request<'_>) -> rocket::response::Result<'static> {
-        let canvas: Vec<u8> = self.canvas.iter().map(|c| *c as u8).collect();
         Response::build()
-            .sized_body(self.width * self.height, Cursor::new(canvas))
+            .sized_body(self.width * self.height, Cursor::new(self.canvas))
             .raw_header("x-width", self.width.to_string())
             .raw_header("x-height", self.height.to_string())
             .header(ContentType::new("application", "octet-stream"))

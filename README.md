@@ -11,16 +11,15 @@ to canvas:
 1. GET `http://localhost:8000/`
 
 In this endpoint you will get canvas as raw binary bytes with
-each byte representing a color. (currently we have only white
-and black)
-
+each byte representing a color. There is 256 color and you can get the
+list of colors with `http://locahost:8000/colors` request.
 2. POST `http://localhost:8000/`
 
 ```json
 {
     "width": 0,
     "height": 0,
-    "color": "White"
+    "color": 12
 }
 ```
 

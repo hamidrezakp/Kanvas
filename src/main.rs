@@ -17,7 +17,7 @@ mod state;
 pub struct Colorize {
     width: usize,
     height: usize,
-    color: canvas::Color,
+    color: u8,
 }
 
 enum Operation {
@@ -31,6 +31,11 @@ fn default_catcher() {}
 #[get("/")]
 fn get_canvas<'c>(state_factory: &State<state::StateFactory>) -> canvas::Canvas {
     state_factory.create().get()
+}
+
+#[get("/colors")]
+fn get_colors() -> &'static str {
+    canvas::COLORS
 }
 
 #[post("/", data = "<colorize>")]
@@ -72,5 +77,5 @@ fn rocket() -> _ {
         .manage(Mutex::new(send))
         .manage(limiter::Limiter::new())
         .attach(cors::cors_fairing())
-        .mount("/", routes![get_canvas, colorize])
+        .mount("/", routes![get_canvas, colorize, get_colors])
 }
