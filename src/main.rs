@@ -1,7 +1,9 @@
 use limiter::Cooldown;
+use options::OPTIONS as opts;
 use rocket::serde::json::Json;
 use rocket::serde::Deserialize;
 use rocket::State;
+use serde::Serialize;
 use std::sync::mpsc::{channel, Sender};
 use std::time::Duration;
 use std::{sync::Mutex, thread};
@@ -11,17 +13,37 @@ extern crate rocket;
 mod canvas;
 mod cors;
 mod limiter;
+mod options;
 mod state;
 
+#[derive(Serialize)]
+pub struct OptionsDto {
+    width: usize,
+    height: usize,
+    refresh_period_miliseconds: u64,
+    cooldown_duration_seconds: i64,
+}
+
+impl From<options::Options> for OptionsDto {
+    fn from(opts_var: options::Options) -> Self {
+        Self {
+            width: opts_var.width,
+            height: opts_var.height,
+            refresh_period_miliseconds: opts_var.refresh_period_miliseconds,
+            cooldown_duration_seconds: opts_var.cooldown_duration_seconds,
+        }
+    }
+}
+
 #[derive(Deserialize)]
-pub struct Colorize {
+pub struct ColorizeRequest {
     width: usize,
     height: usize,
     color: u8,
 }
 
 enum Operation {
-    Colorize(Colorize),
+    Colorize(ColorizeRequest),
     Publish,
 }
 
@@ -35,12 +57,17 @@ fn get_canvas<'c>(state_factory: &State<state::StateFactory>) -> canvas::Canvas 
 
 #[get("/colors")]
 fn get_colors() -> &'static str {
-    canvas::COLORS
+    opts.colors
+}
+
+#[get("/options")]
+fn get_options() -> Json<OptionsDto> {
+    Json(opts.into())
 }
 
 #[post("/", data = "<colorize>")]
 fn colorize(
-    colorize: Json<Colorize>,
+    colorize: Json<ColorizeRequest>,
     send_op: &State<Mutex<Sender<Operation>>>,
     _cooldown: Cooldown,
 ) {
@@ -67,7 +94,7 @@ fn rocket() -> _ {
 
     let timer_send_handle = send.clone();
     thread::spawn(move || loop {
-        thread::sleep(Duration::from_millis(1000));
+        thread::sleep(Duration::from_millis(opts.refresh_period_miliseconds));
         timer_send_handle.send(Operation::Publish).unwrap();
     });
 
@@ -77,5 +104,5 @@ fn rocket() -> _ {
         .manage(Mutex::new(send))
         .manage(limiter::Limiter::new())
         .attach(cors::cors_fairing())
-        .mount("/", routes![get_canvas, colorize, get_colors])
+        .mount("/", routes![get_canvas, colorize, get_colors, get_options])
 }

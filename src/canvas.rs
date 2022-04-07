@@ -1,11 +1,6 @@
-use std::io::Cursor;
-
+use crate::options::OPTIONS as opts;
 use rocket::{http::ContentType, response::Responder, Response};
-
-const WIDTH: usize = 100;
-const HEIGHT: usize = 100;
-
-pub const COLORS: &'static str = include_str!("../colors.json");
+use std::io::Cursor;
 
 pub type Color = u8;
 
@@ -13,15 +8,15 @@ pub type Color = u8;
 pub struct Canvas {
     pub width: usize,
     pub height: usize,
-    pub canvas: [Color; WIDTH * HEIGHT],
+    pub canvas: [Color; opts.width * opts.height],
 }
 
 impl Default for Canvas {
     fn default() -> Self {
         Self {
-            width: WIDTH,
-            height: HEIGHT,
-            canvas: [Color::default(); WIDTH * HEIGHT],
+            width: opts.width,
+            height: opts.height,
+            canvas: [Color::default(); opts.width * opts.height],
         }
     }
 }

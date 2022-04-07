@@ -1,3 +1,4 @@
+use crate::options::OPTIONS as opts;
 use chrono::{prelude::*, Duration};
 use rocket::http::Status;
 use rocket::outcome::Outcome;
@@ -6,8 +7,6 @@ use rocket::Request;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 use std::sync::Mutex;
-
-const COOLDOWN_DURATION_SECONDS: i64 = 10;
 
 pub struct Limiter(Mutex<HashMap<SocketAddr, NaiveDateTime>>);
 
@@ -39,7 +38,7 @@ impl<'r> FromRequest<'r> for Cooldown {
                             _ => {
                                 map.insert(
                                     remote_addr,
-                                    now + Duration::seconds(COOLDOWN_DURATION_SECONDS),
+                                    now + Duration::seconds(opts.cooldown_duration_seconds),
                                 );
                                 Outcome::Success(Cooldown)
                             }
