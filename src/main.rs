@@ -9,6 +9,7 @@ use std::{sync::Mutex, thread};
 #[macro_use]
 extern crate rocket;
 mod canvas;
+mod cors;
 mod limiter;
 mod state;
 
@@ -70,5 +71,6 @@ fn rocket() -> _ {
         .manage(state_factory)
         .manage(Mutex::new(send))
         .manage(limiter::Limiter::new())
+        .attach(cors::cors_fairing())
         .mount("/", routes![get_canvas, colorize])
 }
