@@ -8,7 +8,7 @@ struct ColorizeOp {
 
 impl Absorb<ColorizeOp> for Canvas {
     fn absorb_first(&mut self, operation: &mut ColorizeOp, _other: &Self) {
-        (*self).canvas[(operation.pos.0 * self.height) + operation.pos.1] = operation.color;
+        self.colorize(operation.pos, operation.color);
     }
 
     fn sync_with(&mut self, first: &Self) {

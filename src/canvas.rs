@@ -11,6 +11,12 @@ pub struct Canvas {
     pub canvas: [Color; opts.width * opts.height],
 }
 
+impl Canvas {
+    pub fn colorize(&mut self, pos: (usize, usize), color: u8) {
+        self.canvas[(pos.0 * self.width) + pos.1] = color;
+    }
+}
+
 impl Default for Canvas {
     fn default() -> Self {
         Self {
