@@ -1,20 +1,28 @@
-## Run
-First install rustup with instructions on [Rustup](https://rustup.rs/).
-
-Then run it:
-
-`cargo run`
-
 ## Endpoints
-There is two endpoints, one for getting canvas and the other for writing
-to canvas:
-1. GET `http://localhost:8000/`
+#### GET `http://localhost:8000/`
 
 In this endpoint you will get canvas as raw binary bytes with
 each byte representing a color. There is 256 color and you can get the
 list of colors with `http://locahost:8000/colors` request.
-2. POST `http://localhost:8000/`
 
+#### GET `http://localhost:8000/colors`
+
+Get list of all the 256 colors available
+
+Response:
+```json
+[
+  "#000000",
+  "#800000",
+  "#008000",
+  ...
+]
+```
+
+#### POST `http://localhost:8000/`
+Set color to a cell
+
+Request:
 ```json
 {
     "width": 0,
@@ -22,6 +30,7 @@ list of colors with `http://locahost:8000/colors` request.
     "color": 12
 }
 ```
+Note: Color field is the index of color in the colors array received from server.
 
 ## Examining binary result
 You can use `hexdump` and `curl` to check output:
