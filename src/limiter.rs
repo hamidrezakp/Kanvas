@@ -23,29 +23,30 @@ impl<'r> FromRequest<'r> for Cooldown {
     type Error = ();
 
     async fn from_request(req: &'r Request<'_>) -> request::Outcome<Self, Self::Error> {
-        match req.rocket().state::<Limiter>() {
-            None => Outcome::Failure((Status::InternalServerError, ())),
-            Some(limiter) => match limiter.0.lock() {
-                Err(_) => Outcome::Failure((Status::InternalServerError, ())),
-                Ok(mut map) => match req.remote() {
-                    None => Outcome::Failure((Status::BadRequest, ())),
-                    Some(remote_addr) => {
-                        let now = Utc::now().naive_utc();
-                        match map.get(&remote_addr) {
-                            Some(due_time) if now < *due_time => {
-                                Outcome::Failure((Status::TooManyRequests, ()))
-                            }
-                            _ => {
-                                map.insert(
-                                    remote_addr,
-                                    now + Duration::seconds(opts.cooldown_duration_seconds),
-                                );
-                                Outcome::Success(Cooldown)
-                            }
+        if let Some(limiter) = req.rocket().state::<Limiter>() {
+            if let Ok(mut map) = limiter.0.lock() {
+                if let Some(remote_addr) = req.remote() {
+                    let now = Utc::now().naive_utc();
+                    match map.get(&remote_addr) {
+                        Some(due_time) if now < *due_time => {
+                            Outcome::Failure((Status::TooManyRequests, ()))
+                        }
+                        _ => {
+                            map.insert(
+                                remote_addr,
+                                now + Duration::seconds(opts.cooldown_duration_seconds),
+                            );
+                            Outcome::Success(Cooldown)
                         }
                     }
-                },
-            },
+                } else {
+                    Outcome::Failure((Status::BadRequest, ()))
+                }
+            } else {
+                Outcome::Failure((Status::InternalServerError, ()))
+            }
+        } else {
+            Outcome::Failure((Status::InternalServerError, ()))
         }
     }
 }
